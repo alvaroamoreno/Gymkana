@@ -82,7 +82,7 @@ def phase1(message):
     msg1 = message + ' 2022'
 
     UDPserver.sendto(msg1.encode('utf-8'), (server, 2000))
-    #UDPserver.recv(1024).decode('utf-8')
+    UDPserver.recv(1024).decode('utf-8')
     msg2 = (UDPserver.recv(1024)).decode('utf-8')
     UDPserver.close
 
@@ -140,65 +140,27 @@ def phase4(message):
     import time
     sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.getprotobyname('icmp'))
 
-    icmp_id = 3567
-    icmp_number = 16
-
+    icmp_id = 3669
+    icmp_number = 5
     header = struct.pack('!bbHhh', 8, 0, 0, icmp_id, icmp_number)
-    time = struct.pack('q', time.time())
+    time = struct.pack('!d',time.time())
 
-    payload = time + message.endoce()
-    message = header + payload
-    checksum = cksum(message)
+    payload = time + message.encode()
+    full_message = header + payload
 
-    header = struct.pack('!bbHhh', 8, 0, checksum, icmp_id, icmp_number)
+    checksum = cksum(full_message)
 
-    message = header + payload
-    sock.sendto(message, (server, 80))
+    packet_header = struct.pack('!bbHhh', 8, 0, checksum, icmp_id, icmp_number)
+    packet_message = packet_header + payload
 
+    sock.sendto(packet_message, (server, 80))
+    sock.recv(2048)
+    data_packet = sock.recv(2048)
+    message = data_packet[36:].decode()
 
+    print(message)
 
-    sock.bind(('', 22725))
-    pck = message
-    sock.sendto(pck, (server, 0))
-    data_packet = sock.recv(1024)
-    icmp_hdr = data_packet[20:28]
-    type, code, checksum, p_id, sequence = struct.unpack('bbHHh', icmp_hdr)
-
-    while p_id != 1:
-
-        data_packet = sock.recv(1024)
-        icmp_hdr = data_packet[20:28]
-        type, code, checksum, p_id, sequence = struct.unpack('bbHHh', icmp_hdr)
-        time = time + 1
-
-        if time == 10:
-            break
-
-
-
-
-
-
-    sock.recv(1024)
-    data_packet = (sock.recv(1024)).decode()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    result4 = data_packet[36:]
-    print(result4)
-    msg5 = result4.split()[0]
+    msg5 = message.split("\n")[0]
     return msg5
 
 #Main execution
